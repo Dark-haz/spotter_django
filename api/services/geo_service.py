@@ -187,7 +187,17 @@ def resolve_route_fuel_request(validated_data):
             folium.Marker((stop[0], stop[1]), popup="stop", icon=folium.Icon(color="blue")).add_to(map)
 
             folium.Marker((station["Latitude"], station["Longitude"]), popup="Station", icon=folium.Icon(color="purple")).add_to(map)
-            folium.Marker((station["Latitude"]-0.0001, station["Longitude"]), icon =folium.DivIcon(html=f'<div style="font-size: 12px; color: white; font-weight: bold;">{station["Name"]} | ${station["Price"]}</div>')).add_to(map)
+            folium.Marker(
+                (station["Latitude"]-0.0001, station["Longitude"]),
+                popup="station",
+                icon=folium.DivIcon(html=f'''
+                    <div style="font-size: 12px; text-align: center;">
+                        <div style="color: white; font-weight: bold; margin-bottom: 5px;">{station["Name"]}</div>
+                        <div style="color: #90ee90; font-weight: bold;">${station["Price"]}</div>
+                    </div>
+                ''')
+                ).add_to(map)
+
 
         car_gpm = car_max_miles//car_mpg
         total_fuel_price = reduce(
