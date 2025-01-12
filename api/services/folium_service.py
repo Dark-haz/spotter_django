@@ -11,5 +11,3 @@ def create_route_map(route, start_coords , end_coords):
     folium.Marker([start_coords[0], start_coords[1]], popup="Start", icon=folium.Icon(color="green")).add_to(m)
     folium.Marker([end_coords[0], end_coords[1]], popup="End", icon=folium.Icon(color="red")).add_to(m)
     return m
-
-def hi() : return "hi"
