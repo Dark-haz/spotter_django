@@ -12,6 +12,7 @@ from functools import reduce
 import geopandas as gpd
 from shapely.geometry import Point
 
+#> Geocode
 def get_lat_lon(address, api_key):
     # Initialize the geocoder
     geocoder = OpenCageGeocode(api_key)
@@ -27,7 +28,7 @@ def get_lat_lon(address, api_key):
     else:
         return None, None
 
-
+#> Open Route 
 def call_openroute_service_by_car(start_coords:list[int]  , end_coords:list[int]):
     '''
         coords in this format : [lat , long]
@@ -42,7 +43,7 @@ def call_openroute_service_by_car(start_coords:list[int]  , end_coords:list[int]
     )
     return route
 
-
+#> Finds coordinates after x miles
 def find_position_on_route(route_coords, target_distance_miles):
     
     cumulative_distance = 0
@@ -70,7 +71,7 @@ def find_position_on_route(route_coords, target_distance_miles):
     return route_coords[-1]
 
 
-
+#> Helper (not used)
 def calculate_route_total_distance(route_coords):
     total_distance = 0
 
@@ -81,7 +82,7 @@ def calculate_route_total_distance(route_coords):
         total_distance += segment_distance
     return total_distance
 
-
+#> Gets stops coordinates even x miles (max car distance here) 
 def calculate_stops_on_route(route_coords, interval_miles , total_distance):
     """
     Calculate stops at each interval along the route.
@@ -101,7 +102,7 @@ def calculate_stops_on_route(route_coords, interval_miles , total_distance):
 
     return stops
 
-
+#> Gets cheapest gas station around a radius (used 200)
 def find_cheapest_gas_station(stops, gas_stations, radius_miles=5):
     """
     Finds the cheapest gas station near each stop within the given radius.
@@ -153,10 +154,11 @@ def find_cheapest_gas_station(stops, gas_stations, radius_miles=5):
 
     return results
 
+#> helper
 def meters_to_miles(meters):
     return meters * 0.000621371
 
-
+#> view logic for cleanup
 def resolve_route_fuel_request(validated_data):
     # {latitude : 1 , longitude: -1}
         start = validated_data.get("start_coordinates")
@@ -210,7 +212,7 @@ def resolve_route_fuel_request(validated_data):
         
         return total_fuel_price, map
 
-
+#> validates if coords are within US (not included in hosted)
 def is_within_us(lat, lon):
     # Load the GeoJSON file for US boundaries
     usa_geo_json_path = os.path.join(settings.BASE_DIR, 'api', 'data', 'USA.geo.json')
