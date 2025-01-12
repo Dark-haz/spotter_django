@@ -33,46 +33,7 @@ class GasStationMapInfoView(APIView):
             
             validated_data =  serializer.validated_data
 
-            # {latitude : 1 , longitude: -1}
-            start = validated_data.get("start_coordinates")
-            start_coords = (start["latitude"], start["longitude"])
-
-            end = validated_data.get("end_coordinates")
-            end_coords = (end["latitude"], end["longitude"])
-
-            car_mpg = validated_data.get("car_mpg")
-            car_max_miles = validated_data.get("car_max_miles")
-
-
-            route = call_openroute_service_by_car(start_coords, end_coords)
-            route_geometry = route["features"][0]["geometry"]
-            
-            waypoints = [(lat, lon) for lon, lat in route_geometry["coordinates"]] 
-            total_distance = meters_to_miles(route["features"][0]["properties"]["summary"]["distance"])
-
-            map = create_route_map(route , start_coords, end_coords)
-
-            gas_station_stops = calculate_stops_on_route(waypoints , car_max_miles, total_distance)
-
-            csv_file_path = os.path.join(settings.BASE_DIR, 'api', 'data', 'cleaned_fuel_prices_file.csv')
-            gas_stations =  pd.read_csv(csv_file_path)
-
-            station_stops = find_cheapest_gas_station(gas_station_stops , gas_stations , 200)
-
-            for item in station_stops:
-                stop,station = item["Stop"] , item["Station"]
-                folium.Marker((stop[0], stop[1]), popup="stop", icon=folium.Icon(color="blue")).add_to(map)
-
-                folium.Marker((station["Latitude"], station["Longitude"]), popup="Station", icon=folium.Icon(color="purple")).add_to(map)
-                folium.Marker((station["Latitude"]-0.0001, station["Longitude"]), icon =folium.DivIcon(html=f'<div style="font-size: 12px; color: white; font-weight: bold;">{station["Name"]} | ${station["Price"]}</div>')).add_to(map)
-
-            car_gpm = car_max_miles//car_mpg
-            print(car_gpm)
-            total_fuel_price = reduce(
-                lambda acc, entry: acc + entry['Station']['Price'] * car_gpm,
-                station_stops,
-                0
-            )
+            total_fuel_price, map = resolve_route_fuel_request(validated_data)
 
             response = json.dumps({
                 "total_fuel_price": total_fuel_price,
@@ -80,7 +41,6 @@ class GasStationMapInfoView(APIView):
             })
 
             return HttpResponse(response, status=200)
-            # return HttpResponse(m._repr_html_())
 
         except Exception as e:
             return HttpResponse({"error": f"Internal server error"}, status=500)
@@ -88,7 +48,7 @@ class GasStationMapInfoView(APIView):
        
 
 class GasStationMapView(APIView):
-    def get(self, request):
+    def post(self, request):
     
         try:          
             serializer = RouteRequestSerializer(data=request.data)
@@ -100,44 +60,8 @@ class GasStationMapView(APIView):
                     )
             
             validated_data =  serializer.validated_data
-
-            # {latitude : 1 , longitude: -1}
-            start = validated_data.get("start_coordinates")
-            start_coords = (start["latitude"], start["longitude"])
-
-            end = validated_data.get("end_coordinates")
-            end_coords = (end["latitude"], end["longitude"])
-
-
-            route = call_openroute_service_by_car(start_coords, end_coords)
-            route_geometry = route["features"][0]["geometry"]
+            total_fuel_price, map = resolve_route_fuel_request(validated_data)
             
-            waypoints = [(lat, lon) for lon, lat in route_geometry["coordinates"]] 
-            total_distance = meters_to_miles(route["features"][0]["properties"]["summary"]["distance"])
-
-            map = create_route_map(route , start_coords, end_coords)
-
-            gas_station_stops = calculate_stops_on_route(waypoints , 500, total_distance)
-
-            csv_file_path = os.path.join(settings.BASE_DIR, 'api', 'data', 'cleaned_fuel_prices_file.csv')
-            gas_stations =  pd.read_csv(csv_file_path)
-
-            station_stops = find_cheapest_gas_station(gas_station_stops , gas_stations , 200)
-
-            for item in station_stops:
-                stop,station = item["Stop"] , item["Station"]
-                folium.Marker((stop[0], stop[1]), popup="stop", icon=folium.Icon(color="blue")).add_to(map)
-
-                folium.Marker((station["Latitude"], station["Longitude"]), popup="Station", icon=folium.Icon(color="purple")).add_to(map)
-                folium.Marker((station["Latitude"]-0.0001, station["Longitude"]), popup="gay", icon =folium.DivIcon(html=f'<div style="font-size: 12px; color: white; font-weight: bold;">{station["Name"]} | ${station["Price"]}</div>')).add_to(map)
-
-            total_fuel_price = reduce(
-                lambda acc, entry: acc + entry['Station']['Price'] * 50,
-                station_stops,
-                0
-            )
-
-
             return render(request, 'api/map_template.html', {
             'map': map._repr_html_(),
             'total_fuel_price': total_fuel_price,
