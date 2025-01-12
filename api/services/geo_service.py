@@ -60,7 +60,6 @@ def find_position_on_route(route_coords, target_distance_miles):
 
         cumulative_distance += segment_distance
 
-    # raise ValueError("Target distance exceeds the length of the route.")
     return route_coords[-1]
 
 

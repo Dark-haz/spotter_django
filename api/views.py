@@ -40,6 +40,9 @@ class GasStationMapInfoView(APIView):
             end = validated_data.get("end_coordinates")
             end_coords = (end["latitude"], end["longitude"])
 
+            car_mpg = validated_data.get("car_mpg")
+            car_max_miles = validated_data.get("car_max_miles")
+
 
             route = call_openroute_service_by_car(start_coords, end_coords)
             route_geometry = route["features"][0]["geometry"]
@@ -49,7 +52,7 @@ class GasStationMapInfoView(APIView):
 
             map = create_route_map(route , start_coords, end_coords)
 
-            gas_station_stops = calculate_stops_on_route(waypoints , 500, total_distance)
+            gas_station_stops = calculate_stops_on_route(waypoints , car_max_miles, total_distance)
 
             csv_file_path = os.path.join(settings.BASE_DIR, 'api', 'data', 'cleaned_fuel_prices_file.csv')
             gas_stations =  pd.read_csv(csv_file_path)
@@ -63,8 +66,10 @@ class GasStationMapInfoView(APIView):
                 folium.Marker((station["Latitude"], station["Longitude"]), popup="Station", icon=folium.Icon(color="purple")).add_to(map)
                 folium.Marker((station["Latitude"]-0.0001, station["Longitude"]), icon =folium.DivIcon(html=f'<div style="font-size: 12px; color: white; font-weight: bold;">{station["Name"]} | ${station["Price"]}</div>')).add_to(map)
 
+            car_gpm = car_max_miles//car_mpg
+            print(car_gpm)
             total_fuel_price = reduce(
-                lambda acc, entry: acc + entry['Station']['Price'] * 50,
+                lambda acc, entry: acc + entry['Station']['Price'] * car_gpm,
                 station_stops,
                 0
             )

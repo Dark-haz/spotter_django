@@ -9,8 +9,11 @@ class CoordinatesSerializer(serializers.Serializer):
 class RouteRequestSerializer(serializers.Serializer):
     start_coordinates = CoordinatesSerializer(required=True)
     end_coordinates = CoordinatesSerializer(required=True)
+    car_mpg = serializers.IntegerField(required=True)
+    car_max_miles = serializers.IntegerField(required=True)
 
 
+#reference
 # class CreateWorkLogSerializer(serializers.Serializer):
 #     start_coordinates = serializers.IntegerField(required=True)
 #     end_coordinates = serializers.FloatField(required=True)
