@@ -9,6 +9,8 @@ from .geo_service import *
 from .folium_service import *
 import pandas as pd
 from functools import reduce
+import geopandas as gpd
+from shapely.geometry import Point
 
 def get_lat_lon(address, api_key):
     # Initialize the geocoder
@@ -207,3 +209,15 @@ def resolve_route_fuel_request(validated_data):
             )
         
         return total_fuel_price, map
+
+
+def is_within_us(lat, lon):
+    # Load the GeoJSON file for US boundaries
+    usa_geo_json_path = os.path.join(settings.BASE_DIR, 'api', 'data', 'USA.geo.json')
+    us_boundary = gpd.read_file(usa_geo_json_path)
+    
+    # Create a Point object for the given coordinates
+    point = Point(lon, lat)
+    
+    # Check if the point is within the US boundary
+    return us_boundary.contains(point).any()
